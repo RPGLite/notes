@@ -51,7 +51,8 @@
 \newcommand{\doccls}[1]{\texttt{#1}}% document class name
 \newcommand{\docclsopt}[1]{\texttt{#1}}% document class option name
 
-\newcommand{\WilliamToDo}[1]{\textcolor{blue}{\textbf{W:~{#1}}}}
+\newcommand{\WilliamToDo}[1]{\todo[color=cyan]{\textbf{W:~{#1}}}}
+\newcommand{\TomToDo}[1]{\todo[color=orange]{\emph{T:~{#1}}}}
 
 \begin{document}
 
@@ -64,8 +65,6 @@
 %\printclassoptions
 
 \section{The Data}
-
-\todo{Hey, William! I imagine I'll be editing this sometimes from the github repository. After you do chunks of work on this could you hit the menu above and make sure it's synced to github? We have a repo for this now, rpglite/notes I think. \textcolor{blue}{Of course I can mate.}}
 
 
 Data\footnote{this may not be a necessary section to include, though it may be useful if this document is to be used as a reference for \textit{outsiders}.} is collected in the form of a Mongo database and organised into six collections of similar documents detailed here with their notable fields:
@@ -102,14 +101,14 @@ A common form for game analytics, also known as pick-rate/win-rate, win-delta / 
 
 % Lad, I can't get this warning to buzz off.
 
-~\cref{fig:WD/PR}~shows that the Healer is both the most successful material and the least popular. \href{'https://staticctf.akamaized.net/J3yJr34U2pZ2Ieem48Dwy9uqj5PNUQTn/2MXEODt9QteOU3WGh4vmNE/51261bebfc558521b7411ccb78ece4fb/Y5S1_Matrix_Attackers.png'}{There are examples of this peculiar occurrence in other games.} Perhaps the low popularity makes the win-delta value more volatile, or the players are choosing based on factors other than their effectiveness. However popularity should be balanced for just as effectiveness is, as game designer Jeff Kaplan states, \textit{"The perception of balance is more powerful than balance itself."}
+Fig. ~\ref{fig:WD/PR}~shows that the Healer is both the most successful material and the least popular. \href{'https://staticctf.akamaized.net/J3yJr34U2pZ2Ieem48Dwy9uqj5PNUQTn/2MXEODt9QteOU3WGh4vmNE/51261bebfc558521b7411ccb78ece4fb/Y5S1_Matrix_Attackers.png'}{There are examples of this peculiar occurrence in other games.} Perhaps the low popularity makes the win-delta value more volatile, or the players are choosing based on factors other than their effectiveness. However popularity should be balanced for just as effectiveness is, as game designer Jeff Kaplan states, \textit{"The perception of balance is more powerful than balance itself."}
 
-As our previous work pertains to metagame development, we wanted to investigate if we could use WD/PR variants to measure this development over time. To do this we have plotted WD/PR for every day since release. \WilliamToDo{Must decide what to do with the figure here. Probably just two days one after the other.}
+As our previous work pertains to metagame development, we wanted to investigate if we could use WD/PR variants to measure this development over time. To do this we have plotted WD/PR for every day since release. 
 
 \begin{figure}
     \centering
-    \includegraphics{}
-    \caption{WD/PR, over days}
+    \includegraphics{pick-win-per-day-snipped.PNG}
+    \caption{Snippet of WD/PR over days}
     \label{fig:my_label}
 \end{figure}
 
@@ -117,47 +116,51 @@ As a measure of how \textit{settled} the metagame is, we plotted each character 
 
 \begin{figure}
     \centering
-    \includegraphics{}
+    \includegraphics{pick-win-per-char.png}
     \caption{WD/PR, per character, over days}
     \label{fig:my_label}
 \end{figure}
 
 \subsection{Elo and non-skill factors on placement}
 
-Elo is a standard mechanism for measuring player skill, devised for Chess. \WilliamToDo{cite, cite, cite, here's how we did it for those interested.}
-
-This is a far better measure of player skill than the \textit{friendly} measure of skill-points including in the game.
+RPGLite has two systems for player ranking, \textit{skill}, a measure of our own creation which is public to all players, and \textit{Elo}, which we also measure, but that we do not make public. Elo is a standard mechanism for measuring player skill, devised for Chess in the 1950s. It forms the basis for a lot of competitive matchmaking ranking systems used today, including \textit{TrueSkill} developed by Microsoft \footnote{For more on Elo, TrueSkill and competitive matchmaking, \href{https://www.microsoft.com/en-us/research/wp-content/uploads/2006/10/Game-Developer-Feature-Article-Graepel-Herbrich.pdf}{this Microsoft white paper} is a good source.}. Elo is a far better measure of player skill than the "friendly" measure of \textit{skill} which rewards games played over success. 
 
 \begin{figure}
     \centering
-    \includegraphics{}
+    \includegraphics{luck_over_Elo.png}
     \caption{Elo of the playerbase plotted against luck}
-    \label{fig:my_label}
+    \label{fig:luck-over-Elo}
 \end{figure}
 
-\WilliamToDo{discuss first-move bias...}
+We can show that there is a relationship between Elo and the average roll in the player-base, this stands to reason.
 
-\begin{figure}
-    \centering
-    \includegraphics{}
-    \caption{Elo of the playerbase plotted against going first}
-    \label{fig:my_label}
-\end{figure}
+It should also be mentioned that RPGLite does have an issue with first-move bias, due to its simplistic nature. A testament to this is that from the first 1653 games completed, 982 were won by the player going first, or 59.4\%.
 
 \subsection{Skill}
 
-\WilliamToDo{We can do better than Elo, we may redo it, but also we can account for every correct move and mistake. Furthermore we can measure the cost of each mistake, \textbf{this is the cool novel bit.}}
+This work is devised specifically so that we can say of any given move made in the game whether or not it was \textit{correct}, and if it was not, then what the \textit{cost} of playing the move was. The values referred to here are the optimal values (or \textit{minimax} values), the probability of winning given your opponent tries to minimise the probability of you winning and you try to maximise it. Through exhaustive state exploration we can attribute to every possible action, in every reachable state, for every configuration of the game, a single value of their optimal probability of winning. When faced with a decision to make, the players optimal probability of winning is equivalent to that of when they have chosen to take the optimal action from that state, before the outcome is determined (i.e. before the action has succeeded or failed). Should they take a different action where their optimal probability of winning is less having chosen an action than it was before, then they have chosen a \textit{sub-optimal} action and the difference between their current and past optimal values can be considered the \textit{cost} of the move. A rudimentary measure of how skilful a player is at RPGLite is to average the cost of every move made in every game they have played. In Fig. \ref{fig:cost-over-Elo} we show that there is a relationship between this rudimentary measure of skill and a player's Elo value, which unsurprisingly implies that skill is a factor in success.
 
 \begin{figure}
     \centering
-    \includegraphics{}
+    \includegraphics{cost_over_Elo.png}
     \caption{Elo of the playerbase plotted against skill}
-    \label{fig:my_label}
+    \label{fig:cost-over-Elo}
 \end{figure}
 
-\newpage
+\subsection{Player types}
 
+By considering the experience of the player when looking at character selection we can investigate what characters players \textit{learn} to play. Fig. \ref{fig:char-select-by-exp}~can be recreated by user$\_$picks$\_$over$\_$time.py
 
+\begin{figure}
+    \centering
+    \includegraphics{character_selection_by_games_played.png}
+    \caption{Proportion of characters chosen by players of various experience, in 5 game intervals. The number of games played in each interval is also shown to show values that may be less accurate.}
+    \label{fig:char-select-by-exp}
+\end{figure}
+
+\subsection{Predictive value of chained strategy generation}
+
+Are we good? How good are we? Let's find out.
 
 \end{document}
 
