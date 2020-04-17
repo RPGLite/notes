@@ -39,6 +39,10 @@
 % Provides paragraphs of dummy text
 \usepackage{lipsum}
 
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}
+
+
 \usepackage[obeyFinal,textsize=footnotesize]{todonotes}
 
 % These commands are used to pretty-print LaTeX commands
@@ -63,6 +67,10 @@
 \end{abstract}
 
 %\printclassoptions
+
+\section{research questions}
+
+
 
 \section{The Data}
 
@@ -138,7 +146,51 @@ It should also be mentioned that RPGLite does have an issue with first-move bias
 
 \subsection{Skill}
 
-This work is devised specifically so that we can say of any given move made in the game whether or not it was \textit{correct}, and if it was not, then what the \textit{cost} of playing the move was. The values referred to here are the optimal values (or \textit{minimax} values), the probability of winning given your opponent tries to minimise the probability of you winning and you try to maximise it. Through exhaustive state exploration we can attribute to every possible action, in every reachable state, for every configuration of the game, a single value of their optimal probability of winning. When faced with a decision to make, the players optimal probability of winning is equivalent to that of when they have chosen to take the optimal action from that state, before the outcome is determined (i.e. before the action has succeeded or failed). Should they take a different action where their optimal probability of winning is less having chosen an action than it was before, then they have chosen a \textit{sub-optimal} action and the difference between their current and past optimal values can be considered the \textit{cost} of the move. A rudimentary measure of how skilful a player is at RPGLite is to average the cost of every move made in every game they have played. In Fig. \ref{fig:cost-over-Elo} we show that there is a relationship between this rudimentary measure of skill and a player's Elo value, which unsurprisingly implies that skill is a factor in success.
+This work is devised specifically so that we can say of any given move made in the game whether or not it was \textit{correct}, and if it was not, then what the \textit{cost} of playing the move was. The values referred to here are the optimal values (or \textit{minimax} values), the probability of winning given your opponent tries to minimise the probability of you winning and you try to maximise it. Through exhaustive state exploration we can attribute to every possible action, in every reachable state, for every configuration of the game, a single value of their optimal probability of winning. When faced with a decision to make, the players optimal probability of winning is equivalent to that of when they have chosen to take the optimal action from that state, before the outcome is determined (i.e. before the action has succeeded or failed). Should they take a different action where their optimal probability of winning is less having chosen an action than it was before, then they have chosen a \textit{sub-optimal} action and the difference between their current and past optimal values can be considered the \textit{cost} of the move. 
+
+The cost function is more easily understood with the aid of diagrams where the game is represented as a tree. Other than at the root, every node on our tree can be attributed to one of the two players, we will colour them red and blue. Red nodes represent turns of the red player where they must decide on a single action to take. These actions then have a probabilistic outcome, for RPGLite this is often \textit{hit} or \textit{miss}. Using a simplified example where it is the blue player's turn in state \emph{s} and they have only two actions available \emph{Knight attack} and \emph{Rogue attack}, here is what part of the tree would look like.
+
+
+\definecolor{lightgrey}{rgb}{0.7, 0.7, .7}
+\definecolor{lightblue}{rgb}{0.5, 0.5, 1}
+\definecolor{lightred}{rgb}{1,.5,.5}
+\usetikzlibrary{shapes}
+\begin{center}\begin{tikzpicture}[]%{{{
+    
+    \node[draw, circle, fill=lightblue] (n1) at (3,7) {$S$};
+    \node[align=center,anchor=south] (lab) at (n1.north) {p(\textcolor{lightblue}{win}) = 0.7};
+    \node[draw, diamond, fill=lightgrey] (n3) at (1.5,4) {};
+    \node[align=center,anchor=east] (lab) at (n3.west) {Knight\\attack};
+    \node[draw, diamond, fill=lightgrey] (n4) at (4.5,4) {};
+    \node[align=center,anchor=west] (lab) at (n4.east) {Rogue\\attack};
+    \node[draw, circle, fill=lightred] (n5) at (0,1) {$O_1$};
+    \node[align=center,anchor=north] (lab) at (n5.south) {p(\textcolor{lightblue}{win}) = 0.9};
+    \node[draw, circle, fill=lightred] (n6) at (3,1) {$O_2$};
+    \node[align=center,anchor=north] (lab) at (n6.south) {p(\textcolor{lightblue}{win}) = 0.6};
+    \node[draw, circle, fill=lightred] (n7) at (6,1) {$O_3$};
+    \node[align=center,anchor=north] (lab) at (n7.south) {p(\textcolor{lightblue}{win}) = 0.8};
+
+    \draw [-{Latex[lightblue, width=6mm, length=6mm]}] (n1) -> (n3);
+    \draw [-{Latex[lightblue, width=6mm, length=6mm]}] (n1) -> (n4);
+    \draw [-{Latex[lightgrey, width=6mm, length=6mm]}] (n3) -> (n5) 
+        node[midway,sloped,above] {hit}
+        node[midway,sloped,below] {$0.6$};
+    \draw [-{Latex[lightgrey, width=6mm, length=6mm]}] (n3) -> (n6) 
+        node[midway,sloped,above] {miss}
+        node[midway,sloped,below] {$0.4$};
+    \draw [-{Latex[lightgrey, width=6mm, length=6mm]}] (n4) -> (n6) 
+        node[midway,sloped,above] {miss}
+        node[midway,sloped,below] {$0.3$};
+    \draw [-{Latex[lightgrey, width=6mm, length=6mm]}] (n4) -> (n7) 
+        node[midway,sloped,above] {hit}
+        node[midway,sloped,below] {$0.7$};
+
+\end{tikzpicture}\end{center}
+
+There are 3 states that could result from the blue players decision, \emph{O$_1$, O$_2$ and O$_3$} and all states are labelled with the optimal probability that the blue player wins (as p(\textcolor{lightblue}{win})). In \emph{S} blue has a 0.7 minimax probability of winning and in state \emph{O$_1$}, where they have successfully performed \emph{Knight attack}, that value has increased up to 0.9. To calculate which action is optimal we must sum the minimax value of each state by the probability of reaching that state. Therefore the optimal probability of the blue player winning having chosen \emph{Knight attack} in state \emph{S} is $0.9\times 0.6 + 0.6\times 0.4 = 0.78$. Similarly, if they chose \emph{Rogue attack} it would be 0.74. From state \emph{S} the optimal action for blue is \emph{Knight attack}, and we calculate the cost of \emph{Rogue attack} as being the difference between 0.78 and 0.74, 0.04. 
+
+
+A rudimentary measure of how skilful a player is at RPGLite is to average the cost of every move made in every game they have played. In Fig. \ref{fig:cost-over-Elo} we show that there is a relationship between this rudimentary measure of skill and a player's Elo value, which unsurprisingly implies that skill is a factor in success.
 
 \begin{figure}
     \centering
@@ -160,7 +212,7 @@ By considering the experience of the player when looking at character selection 
 
 \subsection{Predictive value of chained strategy generation}
 
-Are we good? How good are we? Let's find out.
+Using chained strategy generation (CSG), we claim that the configuration of RPGLite used 
 
 \end{document}
 
